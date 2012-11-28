@@ -6,12 +6,23 @@ import javax.swing.JFrame;
 
 public class Circles {
 	public static void main(final String... args) {
-		JFrame f = new JFrame();
+		final JFrame f = new JFrame();
 		Container c = f.getContentPane();
 		c.add(new Drawer());
 		f.setSize(400, 400);
+		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		f.setVisible(true);
-		while(true)
-			f.repaint();
+		new Thread(new Runnable() {
+			public void run() {
+				while(true) {
+					f.repaint();
+					try {
+						Thread.sleep(30);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}).start();
 	}
 }

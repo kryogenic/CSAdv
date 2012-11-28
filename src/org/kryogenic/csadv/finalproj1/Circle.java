@@ -5,40 +5,32 @@ import java.awt.Graphics;
 import java.awt.Point;
 
 public class Circle {
-	private final Color startColor;
-	private final short life;
-	private Point p;
-	private final int r;
+	private final float HUE;
+	private final float SAT;
 	
-	public Circle(Color startColor, Point p) {
-		this(startColor, 255, p, 50);
+	private boolean growing = true;
+	private float life;
+	private Point p;
+	
+	public Circle(float hue, float sat, Point p) {
+		this(hue, sat, 1/8f, p);
 	}
-	public Circle(Color startColor, Point p, int r) {
-		this(startColor, 255, p, r);
-	}
-	public Circle(Color startColor, int life, Point p, int r) {
-		this.startColor = startColor;
-		if(life > 255) {
-			throw new IllegalArgumentException("Life cannot be greater than 255");
-		}
-		this.life = (short)life;
+	private Circle(float hue, float sat, float life, Point p) {
+		this.HUE = hue;
+		this.SAT = sat;
+		this.life = life > 1 ? 1 : life;
 		this.p = p;
-		this.r = r;
 	}
 	
 	public void draw(Graphics g) {
-		g.setColor(limit(startColor, life));
-		g.fillOval(p.x, p.y, r * 2, r * 2);
-	}
-	
-	private Color limit(Color c, short limit) {
-		int r = c.getRed(), g = c.getGreen(), b = c.getBlue();
-		if(r > limit)
-			r = limit;
-		if(g > limit)
-			g = limit;
-		if(b > limit)
-			b = limit;
-		return new Color(r, g, b);
+		if(growing)
+			growing = (life += 0.05) <= 1;
+		g.setColor(Color.getHSBColor(HUE, SAT, life));
+		float d = life * 100;
+		float r = d / 2;
+		g.fillOval(p.x - (int)r, p.y - (int)r,  (int)d, (int)d);
+		g.setColor(new Color(HUE, SAT, 1));
+		//g.drawString("Hue: " + String.valueOf(HUE) + " Sat: " + String.valueOf(SAT), p.x, p.y);
+		//g.drawString("Bright: " + String.valueOf(life), p.x, p.y + 20);
 	}
 }
