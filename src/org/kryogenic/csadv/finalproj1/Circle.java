@@ -21,16 +21,16 @@ public class Circle {
 
     public Force.Vector2 last = Force.Vector2.ZERO;
 	
-	public Circle(float hue, float sat, Point p) {
-		this(hue, sat, 1/8f, p);
+	public Circle(float hue, float sat, Point p, Direction d) {
+		this(hue, sat, 1/8f, p, d);
 	}
-	private Circle(float hue, float sat, float life, Point p) {
+	private Circle(float hue, float sat, float life, Point p, Direction d) {
 		this.HUE = hue;
 		this.SAT = sat;
         this.LIFE_PER_TICK = (1 - life) / 5;
 		this.life = life > 1 ? 1 : life;
 		this.p = new Point2D.Float(p.x, p.y);
-        addForce(new Force(0, 100, 0, 0, new Falloff.Gravity()));
+        addForce(new Force(d, new Falloff.Gravity()));
 	}
     
     public void addForce(Force f) {
@@ -59,8 +59,14 @@ public class Circle {
         return false;
     }
 
+    public void flipForces(TriPlane p) {
+        for(Force f : forces) {
+            f.flip(p);
+        }
+    }
+    
     public Ellipse2D getShape() {
-        float d = life * 75;
+        float d = life * 30;
         float r = d / 2;
         return new Ellipse2D.Double(p.x - r, p.y - r, d, d);
     }

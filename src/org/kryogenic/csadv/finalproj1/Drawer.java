@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Point2D;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Random;
@@ -49,22 +50,26 @@ public class Drawer extends JComponent implements MouseListener {
             c.update();
             Ellipse2D e1 = c.getShape();
             if(e1.getMaxY() >= this.getHeight()) {
-                c.addForce(new Force(0, 0, 0, Math.abs(c.last.getY()) * 2, new Falloff.Collision()));
+                //c.addForce(new Force(0, 0, 0, Math.abs(c.last.getY()) * 2, new Falloff.Collision()));
+                c.flipForces(TriPlane.VERTICAL);
             } else if (e1.getMinY() <= 0) {
-                c.addForce(new Force(0, c.last.getY() * 2, 0, 0, new Falloff.Collision()));
+                //c.addForce(new Force(0, c.last.getY() * 2, 0, 0, new Falloff.Collision()));
+                c.flipForces(TriPlane.VERTICAL);
             } else if (e1.getMaxX() >= this.getWidth()) {
-                c.addForce(new Force(0, 0, c.last.getX() * 2, 0, new Falloff.Collision()));
+                //c.addForce(new Force(0, 0, c.last.getX() * 2, 0, new Falloff.Collision()));
+                c.flipForces(TriPlane.HORIZONTAL);
             } else if (e1.getMinX() <= 0) {
-                c.addForce(new Force(c.last.getX() * 2, 0, 0, 0, new Falloff.Collision()));
+                //c.addForce(new Force(c.last.getX() * 2, 0, 0, 0, new Falloff.Collision()));
+                c.flipForces(TriPlane.HORIZONTAL);
             }
             for(Circle c2 : circles) {
                 if(c.equals(c2))
                     continue;
                 Ellipse2D e2 = c2.getShape();
-                if(Math.sqrt(Math.pow(e1.getCenterX() - e2.getCenterX(), 2) + Math.pow(e1.getCenterY() - e2.getCenterY(), 2)) <= 75) {
+                if(Math.sqrt(Math.pow(e1.getCenterX() - e2.getCenterX(), 2) + Math.pow(e1.getCenterY() - e2.getCenterY(), 2)) <= 30) {
                     //c.addForce(new Force((float) e1.getCenterX(), (float) e1.getCenterY(), (float) e2.getCenterX(), (float) e2.getCenterY(), new Falloff.Collision()));
                     // todo: fix the force cancelling issue. the collision of another circle ends up hitting too hard and making it sink...
-                    c.addForce(new Force((float) e1.getCenterX(), (float) e1.getCenterY(), (float) e2.getCenterX(), (float) e2.getCenterY(), new Falloff.Collision()));
+                    c.addForce(new Force((float) e2.getCenterX(), (float) e2.getCenterY(), (float) e1.getCenterX(), (float) e1.getCenterY(), new Falloff.Collision()));
                 }
             }
         }
@@ -80,6 +85,6 @@ public class Drawer extends JComponent implements MouseListener {
 	public void mousePressed(MouseEvent e) {}
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		toAdd.add(new Circle(r.nextFloat(), r.nextFloat(), e.getPoint()));
+		toAdd.add(new Circle(r.nextFloat(), r.nextFloat(), e.getPoint(), new Direction(new Point2D.Float(r.nextFloat() * 100, r.nextFloat() * 100), new Point2D.Float(r.nextFloat() * 100, r.nextFloat() * 100))));
 	}
 }
