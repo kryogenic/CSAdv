@@ -1,11 +1,15 @@
 package org.kryogenic.csadv.finalproj1;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
@@ -17,20 +21,41 @@ import javax.swing.JComponent;
  * @date: 27/11/12
  */
 public class Drawer extends JComponent implements MouseListener {
+	static final long serialVersionUID = 1;
 	Set<Circle> circles = new LinkedHashSet<Circle>();
-    Set<Circle> toAdd = new HashSet<Circle>();
 	Random r = new Random();
 	
 	public Drawer() {
-		/*this.addMouseMotionListener(new MouseMotionListener() {
+		this.addMouseMotionListener(new MouseMotionListener() {
 			public void mouseMoved(MouseEvent e) {
-				circles.add(new Circle(r.nextFloat(), r.nextFloat(), e.getPoint()));
+				synchronized(Drawer.this) {
+					circles.add(
+							new Circle(
+									r.nextFloat(),
+									r.nextFloat(),
+									(float)Math.abs(r.nextGaussian()) + 7,
+									e.getPoint(),
+									new Direction(
+											new Point2D.Float(
+													(float)r.nextGaussian() * 10,
+													(float)r.nextGaussian() * 10
+											),
+											new Point2D.Float(
+													(float)r.nextGaussian() * 10,
+													(float)r.nextGaussian() * 10
+											)
+									).ground()
+							)
+					);
+				}
 			}
 			public void mouseDragged(MouseEvent e) {
-				circles.add(new Circle(r.nextFloat(), r.nextFloat(), e.getPoint()));
+				synchronized(Drawer.this) {
+					circles.add(new Circle(r.nextFloat(), r.nextFloat(), (float)Math.abs(r.nextGaussian()) + 4, e.getPoint(), new Direction(new Point2D.Float(r.nextFloat() * 100, r.nextFloat() * 10), new Point2D.Float(r.nextFloat() * 10, r.nextFloat() * 10)).ground()));
+				}
 			}
-		});*/
-        this.addMouseListener(this);
+		});
+        //this.addMouseListener(this);
 	}
 	
 	protected void paintComponent(Graphics g) {
@@ -38,41 +63,41 @@ public class Drawer extends JComponent implements MouseListener {
 		g.fillRect(0, 0, this.getWidth(), this.getHeight());
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		for(Circle c : circles)
-			c.draw(g2);
+        synchronized(this) {
+			for(Circle c : circles)
+				c.draw(g2, false, circles);
+        }
 	}
     
     public void update() {
-        for(Circle c : toAdd) {
-            circles.add(c);
-        }
-        for(Circle c : circles) {
-            c.update();
-            Ellipse2D e1 = c.getShape();
-            if(e1.getMaxY() >= this.getHeight()) {
-                //c.addForce(new Force(0, 0, 0, Math.abs(c.last.getY()) * 2, new Falloff.Collision()));
-                c.flipForces(TriPlane.VERTICAL);
-            } else if (e1.getMinY() <= 0) {
-                //c.addForce(new Force(0, c.last.getY() * 2, 0, 0, new Falloff.Collision()));
-                c.flipForces(TriPlane.VERTICAL);
-            } else if (e1.getMaxX() >= this.getWidth()) {
-                //c.addForce(new Force(0, 0, c.last.getX() * 2, 0, new Falloff.Collision()));
-                c.flipForces(TriPlane.HORIZONTAL);
-            } else if (e1.getMinX() <= 0) {
-                //c.addForce(new Force(c.last.getX() * 2, 0, 0, 0, new Falloff.Collision()));
-                c.flipForces(TriPlane.HORIZONTAL);
-            }
-            for(Circle c2 : circles) {
-                if(c.equals(c2))
-                    continue;
-                Ellipse2D e2 = c2.getShape();
-                if(Math.sqrt(Math.pow(e1.getCenterX() - e2.getCenterX(), 2) + Math.pow(e1.getCenterY() - e2.getCenterY(), 2)) <= 30) {
-                    //c.addForce(new Force((float) e1.getCenterX(), (float) e1.getCenterY(), (float) e2.getCenterX(), (float) e2.getCenterY(), new Falloff.Collision()));
-                    // todo: fix the force cancelling issue. the collision of another circle ends up hitting too hard and making it sink...
-                    c.addForce(new Force((float) e2.getCenterX(), (float) e2.getCenterY(), (float) e1.getCenterX(), (float) e1.getCenterY(), new Falloff.Collision()));
-                }
-            }
-        }
+    	synchronized(this) {
+	        for(Iterator<Circle> i = circles.iterator(); i.hasNext();) {
+	        	Circle c = i.next();
+	            if(!c.update()) {
+	            	//i.remove();
+	            }
+	            Ellipse2D e1 = c.shape();
+	            if(e1.getMaxY() >= this.getHeight()) {
+	                c.flipForces(TriPlane.VERTICAL, Sign.NEGATIVE);
+	            } else if (e1.getMinY() <= 0) {
+	                c.flipForces(TriPlane.VERTICAL, Sign.POSITIVE);
+	            } else if (e1.getMaxX() >= this.getWidth()) {
+	                c.flipForces(TriPlane.HORIZONTAL, Sign.NEGATIVE);
+	            } else if (e1.getMinX() <= 0) {
+	                c.flipForces(TriPlane.HORIZONTAL, Sign.POSITIVE);
+	            }
+	            for(Circle c2 : circles) {
+	                if(c.equals(c2) || c2.probablyNotMoving())
+	                    continue;
+	                float collisionRange = c.radius() + c2.radius();
+	                float collisionValue = collisionRange - (float) Math.sqrt(Math.pow(e1.getCenterX() - c2.center().x, 2) + Math.pow(e1.getCenterY() - c2.center().y, 2));
+	                if(collisionValue > 0) {
+	                	//collisionValue = collisionValue < 1 ? 1 : collisionValue;
+	                    c.addForce(new Force(c2.center().x * collisionValue, c2.center().y * collisionValue, c.center().x * collisionValue, c.center().y * collisionValue, new Falloff.Collision()));
+	                }
+	            }
+	        }
+    	}
     }
 	
 	@Override
@@ -85,6 +110,8 @@ public class Drawer extends JComponent implements MouseListener {
 	public void mousePressed(MouseEvent e) {}
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		toAdd.add(new Circle(r.nextFloat(), r.nextFloat(), e.getPoint(), new Direction(new Point2D.Float(r.nextFloat() * 100, r.nextFloat() * 100), new Point2D.Float(r.nextFloat() * 100, r.nextFloat() * 100))));
+		synchronized(this) {
+			circles.add(new Circle(r.nextFloat(), r.nextFloat(), (float)Math.abs(r.nextGaussian()) + 4, e.getPoint(), new Direction(new Point2D.Float(r.nextFloat() * 100, r.nextFloat() * 100), new Point2D.Float(r.nextFloat() * 100, r.nextFloat() * 100)).ground()));
+		}
 	}
 }

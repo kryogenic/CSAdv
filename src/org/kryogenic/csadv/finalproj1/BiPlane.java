@@ -5,5 +5,5 @@ package org.kryogenic.csadv.finalproj1;
  * @date: 03/12/12
  */
 public enum BiPlane {
-    HORIZONTAL, VERTICAL
+    X, Y
 }

@@ -1,9 +1,13 @@
 package org.kryogenic.csadv.finalproj1;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -14,35 +18,45 @@ public class Circle {
 	private final float HUE;
 	private final float SAT;
     private final float LIFE_PER_TICK;
+	private final float MAGNITUDE;
 
     private Set<Force> forces = new HashSet<Force>();
     private float life;
 	private Point2D.Float p;
 
-    public Force.Vector2 last = Force.Vector2.ZERO;
 	
-	public Circle(float hue, float sat, Point p, Direction d) {
-		this(hue, sat, 1/8f, p, d);
+	public Circle(float hue, float sat, float magnitude, Point p, Direction d) {
+		this(hue, sat, 1/8f, magnitude, p, d);
 	}
-	private Circle(float hue, float sat, float life, Point p, Direction d) {
+	private Circle(float hue, float sat, float life, float magnitude, Point p, Direction d) {
 		this.HUE = hue;
 		this.SAT = sat;
         this.LIFE_PER_TICK = (1 - life) / 5;
+        this.MAGNITUDE = magnitude;
 		this.life = life > 1 ? 1 : life;
 		this.p = new Point2D.Float(p.x, p.y);
-        addForce(new Force(d, new Falloff.Gravity()));
+        addForce(new Force(d, new Falloff.Initial()));
 	}
     
     public void addForce(Force f) {
         forces.add(f);
     }
+    
+    public Point2D.Float center() {
+    	return p;
+    }
 	
-	public void draw(Graphics2D g) {
+	public void draw(Graphics2D g, boolean net, Collection<Circle> circles) {
 		g.setColor(Color.getHSBColor(HUE, SAT, life));
-        g.fill(getShape());
-        g.setColor(Color.getHSBColor(0, 0, 1/8));
-        g.drawString("Forces: " + String.valueOf(forces.size()), p.x - 25, p.y - 5);
-        g.drawString("(" + p.x + ", " + p.y + ")", p.x - 35, p.y + 5);
+	    g.fill(shape());
+		if (net) {
+			for(Iterator<Circle> i = circles.iterator(); i.hasNext();) {
+				Circle c = i.next();
+				g.drawLine((int)p.x, (int)p.y, (int)c.p.x, (int)c.p.y);
+			}
+		}
+        //g.setColor(Color.CYAN);
+        //g.drawString(String.valueOf(forces.size()), p.x - 5, p.y + 5);
 	}
     
     public boolean equals(Object o) {
@@ -50,42 +64,50 @@ public class Circle {
             Circle c = (Circle) o;
             if(this.p.equals(c.p)) {
                 if(this.life == c.life) {
-                    if(this.getShape().equals(c.getShape())) {
-                        return true;
-                    }
+                    return true;
                 }
             }
         }
         return false;
     }
 
-    public void flipForces(TriPlane p) {
+    public void flipForces(TriPlane p, Sign s) {
         for(Force f : forces) {
-            f.flip(p);
+            f.flip(p, s);
         }
     }
     
-    public Ellipse2D getShape() {
-        float d = life * 30;
-        float r = d / 2;
-        return new Ellipse2D.Double(p.x - r, p.y - r, d, d);
+    public float life() {
+    	return life;
+    }
+    
+    public boolean probablyNotMoving() {
+    	return forces.isEmpty();
+    }
+    
+    public float radius() {
+    	return life() * MAGNITUDE;
+    }
+    
+    public Ellipse2D shape() {
+        return new Ellipse2D.Double(p.x - radius(), p.y - radius(), radius() * 2, radius() * 2);
     }
 
-    public void update() {
+    public boolean update() {
         if(life + LIFE_PER_TICK <= 1)
             life += LIFE_PER_TICK;
-        Set<Force> toRemove = new HashSet<Force>();
-        for(Force f : forces) {
+        for(Iterator<Force> i = forces.iterator(); i.hasNext();) {
+        	Force f = i.next();
             f.tick();
             if(f.xMag() == 0 && f.yMag() == 0) {
-                toRemove.add(f);
+                i.remove();
             }
         }
-        for(Force f : toRemove) {
-            forces.remove(f);
-        }
-        last = Force.add(forces);
-        p.x += last.getX() / 10;
-        p.y += last.getY() / 10;
+        if(forces.isEmpty())
+        	return false;
+        Force.Vector2 sum = Force.add(forces);
+        p.x += sum.getX() / 5;
+        p.y += sum.getY() / 5;
+        return true;
     }
 }
