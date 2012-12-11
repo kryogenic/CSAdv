@@ -25,8 +25,12 @@ public class Force {
     public Direction direction() {
     	return d;
     }
-    public void collide(float angle) {
-    	// todo should flip this force in relation to the angle given
+    public void collide(Direction d) {
+    	Direction perp =
+    		new Direction(
+    			new Point2D.Float(d.origin().y, d.destination().x),		   
+    			new Point2D.Float(d.destination().y, d.origin().x)
+    		);
     }
     public void flip(TriPlane p) {
         d.flip(p);
