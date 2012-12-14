@@ -87,13 +87,17 @@ public class Drawer extends JComponent implements MouseListener {
 	                c.flipForces(TriPlane.HORIZONTAL, Sign.POSITIVE);
 	            }
 	            for(Circle c2 : circles) {
-	                if(c.equals(c2) || c2.probablyNotMoving())
+	                if(c.equals(c2))
 	                    continue;
+	                // check for collision
 	                float collisionRange = c.radius() + c2.radius();
-	                float collisionValue = collisionRange - (float) Math.sqrt(Math.pow(e1.getCenterX() - c2.center().x, 2) + Math.pow(e1.getCenterY() - c2.center().y, 2));
-	                if(collisionValue > 0) {
+	                Vector2D normal = new Vector2D(c.center().x - c2.center().x, c.center().y - c2.center().y);
+	                // handle collision
+	                
+	                if(collisionRange > normal.length()) {
 	                	//collisionValue = collisionValue < 1 ? 1 : collisionValue;
-	                    c.addForce(new Force(c2.center().x * collisionValue, c2.center().y * collisionValue, c.center().x * collisionValue, c.center().y * collisionValue, new Falloff.Collision()));
+	                    //c.addForce(new Force(c2.center().x * collisionValue, c2.center().y * collisionValue, c.center().x * collisionValue, c.center().y * collisionValue, new Falloff.Collision()));
+	                	c.reflectForces(normal);
 	                }
 	            }
 	        }

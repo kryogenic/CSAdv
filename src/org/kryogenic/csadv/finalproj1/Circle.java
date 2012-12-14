@@ -25,17 +25,17 @@ public class Circle {
 	private Point2D.Float p;
 
 	
-	public Circle(float hue, float sat, float magnitude, Point p, Direction d) {
-		this(hue, sat, 1/8f, magnitude, p, d);
+	public Circle(float hue, float sat, float magnitude, Point p, Vector2D v) {
+		this(hue, sat, 1/8f, magnitude, p, v);
 	}
-	private Circle(float hue, float sat, float life, float magnitude, Point p, Direction d) {
+	private Circle(float hue, float sat, float life, float magnitude, Point p, Vector2D d) {
 		this.HUE = hue;
 		this.SAT = sat;
         this.LIFE_PER_TICK = (1 - life) / 5;
         this.MAGNITUDE = magnitude;
 		this.life = life > 1 ? 1 : life;
 		this.p = new Point2D.Float(p.x, p.y);
-        addForce(new Force(d, new Falloff.Initial()));
+        addForce(new Force(v, new Falloff.Gravity()));
 	}
     
     public void addForce(Force f) {
@@ -81,12 +81,14 @@ public class Circle {
     	return life;
     }
     
-    public boolean probablyNotMoving() {
-    	return forces.isEmpty();
-    }
-    
     public float radius() {
     	return life() * MAGNITUDE;
+    }
+    
+    public void reflectForces(Vector2D normal) {
+    	for(Force f : forces) {
+    		f.reflect(normal);
+    	}
     }
     
     public Ellipse2D shape() {
@@ -105,7 +107,7 @@ public class Circle {
         }
         if(forces.isEmpty())
         	return false;
-        Force.Vector2 sum = Force.add(forces);
+        Vector2D sum = Force.add(forces);
         p.x += sum.getX() / 5;
         p.y += sum.getY() / 5;
         return true;
