@@ -35,23 +35,27 @@ public class Drawer extends JComponent implements MouseListener {
 									r.nextFloat(),
 									(float)Math.abs(r.nextGaussian()) + 7,
 									e.getPoint(),
-									new Direction(
-											new Point2D.Float(
-													(float)r.nextGaussian() * 10,
-													(float)r.nextGaussian() * 10
-											),
-											new Point2D.Float(
-													(float)r.nextGaussian() * 10,
-													(float)r.nextGaussian() * 10
-											)
-									).ground()
+									new Vector2D(
+										(float)r.nextGaussian() * 10,
+										(float)r.nextGaussian() * 10
+									)
 							)
 					);
 				}
 			}
 			public void mouseDragged(MouseEvent e) {
 				synchronized(Drawer.this) {
-					circles.add(new Circle(r.nextFloat(), r.nextFloat(), (float)Math.abs(r.nextGaussian()) + 4, e.getPoint(), new Direction(new Point2D.Float(r.nextFloat() * 100, r.nextFloat() * 10), new Point2D.Float(r.nextFloat() * 10, r.nextFloat() * 10)).ground()));
+					circles.add(
+							new Circle(
+									r.nextFloat(),
+									r.nextFloat(),
+									(float)Math.abs(r.nextGaussian()) + 7,
+									e.getPoint(),
+									new Vector2D(
+										(float)r.nextGaussian() * 10,
+										(float)r.nextGaussian() * 10)
+									)
+							);
 				}
 			}
 		});
@@ -78,23 +82,27 @@ public class Drawer extends JComponent implements MouseListener {
 	            }
 	            Ellipse2D e1 = c.shape();
 	            if(e1.getMaxY() >= this.getHeight()) {
-	                c.flipForces(TriPlane.VERTICAL, Sign.NEGATIVE);
+	                c.signForces(TriPlane.VERTICAL, Sign.NEGATIVE);
 	            } else if (e1.getMinY() <= 0) {
-	                c.flipForces(TriPlane.VERTICAL, Sign.POSITIVE);
+	                c.signForces(TriPlane.VERTICAL, Sign.POSITIVE);
 	            } else if (e1.getMaxX() >= this.getWidth()) {
-	                c.flipForces(TriPlane.HORIZONTAL, Sign.NEGATIVE);
+	                c.signForces(TriPlane.HORIZONTAL, Sign.NEGATIVE);
 	            } else if (e1.getMinX() <= 0) {
-	                c.flipForces(TriPlane.HORIZONTAL, Sign.POSITIVE);
+	                c.signForces(TriPlane.HORIZONTAL, Sign.POSITIVE);
 	            }
 	            for(Circle c2 : circles) {
 	                if(c.equals(c2))
 	                    continue;
 	                // check for collision
-	                float collisionRange = c.radius() + c2.radius();
-	                Vector2D normal = new Vector2D(c.center().x - c2.center().x, c.center().y - c2.center().y);
+	                float minCollisionRange = 2 * c.radius() + 2 * c2.radius();
+	                Ellipse2D e2 = c2.shape();
+	                Vector2D normal = new Vector2D( // TODO fix balls sticking together
+	                		(float)Math.max(e2.getMaxX() - e1.getMinX(), e1.getMaxX() - e2.getMinX()),
+	                		(float)Math.max(e2.getMaxY() - e1.getMinY(), e1.getMaxY() - e2.getMinY())
+	                		);
 	                // handle collision
 	                
-	                if(collisionRange > normal.length()) {
+	                if(normal.length() < minCollisionRange) {
 	                	//collisionValue = collisionValue < 1 ? 1 : collisionValue;
 	                    //c.addForce(new Force(c2.center().x * collisionValue, c2.center().y * collisionValue, c.center().x * collisionValue, c.center().y * collisionValue, new Falloff.Collision()));
 	                	c.reflectForces(normal);
@@ -115,7 +123,17 @@ public class Drawer extends JComponent implements MouseListener {
 	@Override
 	public void mouseReleased(MouseEvent e) {
 		synchronized(this) {
-			circles.add(new Circle(r.nextFloat(), r.nextFloat(), (float)Math.abs(r.nextGaussian()) + 4, e.getPoint(), new Direction(new Point2D.Float(r.nextFloat() * 100, r.nextFloat() * 100), new Point2D.Float(r.nextFloat() * 100, r.nextFloat() * 100)).ground()));
+			circles.add(
+				new Circle(
+						r.nextFloat(),
+						r.nextFloat(),
+						(float)Math.abs(r.nextGaussian()) + 7,
+						e.getPoint(),
+						new Vector2D(
+							(float)r.nextGaussian() * 10,
+							(float)r.nextGaussian() * 10)
+						)
+				);
 		}
 	}
 }

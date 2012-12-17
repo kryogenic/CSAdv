@@ -22,13 +22,13 @@ public class Force {
     }
 
     public void flip(TriPlane p) {
-        v.flip(p);
-    }
-    public void flip(TriPlane p, Sign s) {
-    	v.flip(p, s);
+        v = v.flip(p);
     }
     public void reflect(Vector2D normal) {
     	v = v.reflect(normal);
+    }
+    public void sign(TriPlane p, Sign s) {
+    	v = v.sign(p, s);
     }
     public void tick() {
         ticks++;
