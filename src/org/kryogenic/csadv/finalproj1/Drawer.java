@@ -7,8 +7,10 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Random;
@@ -94,15 +96,19 @@ public class Drawer extends JComponent implements MouseListener {
 	                if(c.equals(c2))
 	                    continue;
 	                // check for collision
-	                float minCollisionRange = 2 * c.radius() + 2 * c2.radius();
-	                Ellipse2D e2 = c2.shape();
-	                Vector2D normal = new Vector2D( // TODO fix balls sticking together
-	                		(float)Math.max(e2.getMaxX() - e1.getMinX(), e1.getMaxX() - e2.getMinX()),
-	                		(float)Math.max(e2.getMaxY() - e1.getMinY(), e1.getMaxY() - e2.getMinY())
-	                		);
+	                float minCollisionRange = c.radius() + c2.radius();
+	                Vector2D normal = new Vector2D(c.center().x - c2.center().x, c.center().y - c2.center().y);
 	                // handle collision
-	                
 	                if(normal.length() < minCollisionRange) {
+	                	Ellipse2D e2 = c.shape();
+	                	Area a1 = new Area(e1);
+	                	Area a2 = new Area(e2);
+	                	a1.intersect(a2);
+	                	Rectangle2D b = a1.getBounds2D();
+	                	Vector2D v = new Vector2D((float)b.getWidth(), (float)b.getHeight());
+	                	c.applyVector(v.normalize().multiply(normal.length() - minCollisionRange));
+	                	System.out.println("Balls were " + (normal.length() - minCollisionRange) + "px away. Moved " + v.length() + "px");
+	                	//c2.addVector(c.velocity());
 	                	//collisionValue = collisionValue < 1 ? 1 : collisionValue;
 	                    //c.addForce(new Force(c2.center().x * collisionValue, c2.center().y * collisionValue, c.center().x * collisionValue, c.center().y * collisionValue, new Falloff.Collision()));
 	                	c.reflectForces(normal);

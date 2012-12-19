@@ -42,6 +42,11 @@ public class Circle {
         velocity = velocity.add(v);
     }
     
+    public void applyVector(Vector2D v) {
+    	p.x += v.getX();
+    	p.y += v.getY();
+    }
+    
     public Point2D.Float center() {
     	return p;
     }
@@ -105,5 +110,9 @@ public class Circle {
         p.x += velocity.getX() / 5;
         p.y += velocity.getY() / 5;
         return true;
+    }
+    
+    public Vector2D velocity() {
+    	return velocity;
     }
 }
