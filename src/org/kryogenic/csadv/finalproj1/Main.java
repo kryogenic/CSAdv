@@ -10,41 +10,53 @@ import javax.swing.JFrame;
  */
 public class Main {
 	public static void main(final String... args) {
-        final JFrame f = new JFrame();
-        final Canvas d = new Canvas();
-        f.getContentPane().add(d);
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.setSize(416, 439);
-        f.setVisible(true);
+        // set up the frame and canvas
+        final JFrame frame = new JFrame();
+        final Canvas canvas = new Canvas();
+        frame.getContentPane().add(canvas);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(416, 439);
+        frame.setVisible(true);
+
 
         final AtomicBoolean needsRepaint = new AtomicBoolean(false);
-        final Object lock = new Object();
+        final Object lock = new Object(); // used so the repaint thread doesn't repaint until the Circles have moved
+
+        // updater thread
         new Thread(new Runnable() {
             public void run() {
-                final int tickMin = 12;
+                final int tickMin = 12; // minimum time for each tick
                 long tickStart;
                 while(true) {
                     tickStart = System.currentTimeMillis();
-                    d.update();
+                    // update the positions of all the Circles
+                    canvas.update();
+                    // now that we have updated data for the Circles, we need to tell the repaint thread to redraw
                     needsRepaint.set(true);
                     synchronized (lock) {
                         lock.notify();
                     }
+                    // wait until next tick, if necessary
                     long deltaTick = System.currentTimeMillis() - tickStart;
                     if(deltaTick < tickMin)
                         try{
                             Thread.sleep(tickMin - deltaTick);
-                        } catch(Exception e) {
+                        } catch(InterruptedException e) {
                             e.printStackTrace();
                         }
                 }
             }
         }).start();
+
+        // repaint thread
         new Thread(new Runnable() {
             public void run() {
                 while(true) {
-                    d.repaint();
-                    d.tick();
+                    // redraw the whole canvas
+                    canvas.repaint();
+                    // tick the FPS counter
+                    canvas.tick();
+                    // wait until the next update
                     needsRepaint.set(false);
                     while(!needsRepaint.get()) {
                         synchronized (lock) {
