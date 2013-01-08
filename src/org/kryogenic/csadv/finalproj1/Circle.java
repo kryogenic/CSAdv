@@ -2,13 +2,10 @@ package org.kryogenic.csadv.finalproj1;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 
 /**
  * @author: Kale
@@ -25,21 +22,40 @@ public class Circle {
 	private Point2D.Float p;
 
 	
-	public Circle(float hue, float sat, float magnitude, Point p, Vector2D v) {
+	public Circle(float hue, float sat, float magnitude, Point2D p, Vector2D v) {
 		this(hue, sat, 1/8f, magnitude, p, v);
 	}
-	private Circle(float hue, float sat, float life, float magnitude, Point p, Vector2D v) {
+	private Circle(float hue, float sat, float life, float magnitude, Point2D p, Vector2D v) {
 		this.HUE = hue;
 		this.SAT = sat;
-        this.LIFE_PER_TICK = (1 - life) / 5;
+        this.LIFE_PER_TICK = (1 - life) / 50;
         this.MAGNITUDE = magnitude;
 		this.life = life > 1 ? 1 : life;
-		this.p = new Point2D.Float(p.x, p.y);
+		this.p = new Point2D.Float((float)p.getX(), (float)p.getY());
         addVector(v);
 	}
     
     public void addVector(Vector2D v) {
         velocity = velocity.add(v);
+    }
+    
+    public void affect(Circle c) {
+        Color col = color();
+        if(col.getRed() >= 235) {
+            double take = c.life / 8;
+            if(c.life > take)
+                c.life -= take;
+            if(life <= 1 - take)
+                life += take;
+        }
+        if(col.getGreen() >= 235) {
+            double give = life / 8;
+            if(c.life <= 1 - give)
+                c.life += give;
+        }
+        if(col.getBlue() >= 235) {
+            c.life = life;
+        }
     }
     
     public void applyVector(Vector2D v) {
@@ -50,9 +66,13 @@ public class Circle {
     public Point2D.Float center() {
     	return p;
     }
+    
+    public Color color() {
+        return Color.getHSBColor(HUE, SAT, life);
+    }
 	
 	public void draw(Graphics2D g, boolean net, Collection<Circle> circles) {
-		g.setColor(Color.getHSBColor(HUE, SAT, life));
+		g.setColor(color());
 	    g.fill(shape());
 		if (net) {
 			for(Iterator<Circle> i = circles.iterator(); i.hasNext();) {
@@ -81,12 +101,12 @@ public class Circle {
     public float radius() {
     	return life() * MAGNITUDE;
     }
-    
-    public void reflectForces(Vector2D normal) {
+
+    public void reflectVelocity(Vector2D normal) {
     	velocity = velocity.reflect(normal);
     }
-    
-    public void signForces(TriPlane p, Sign s) {
+
+    public void signVelocity(Vector2D.Plane p, Vector2D.Sign s) {
     	velocity = velocity.sign(p, s);
     }
     
@@ -94,22 +114,11 @@ public class Circle {
         return new Ellipse2D.Double(p.x - radius(), p.y - radius(), radius() * 2, radius() * 2);
     }
 
-    public boolean update() {
+    public void update() {
         if(life + LIFE_PER_TICK <= 1)
             life += LIFE_PER_TICK;
-        /*for(Iterator<Force> i = forces.iterator(); i.hasNext();) {
-        	Force f = i.next();
-            f.tick();
-            if(f.xMag() == 0 && f.yMag() == 0) {
-                i.remove();
-            }
-        }
-        if(forces.isEmpty())
-        	return false;*/
-        //Vector2D sum = Force.add(forces);
-        p.x += velocity.getX() / 5;
-        p.y += velocity.getY() / 5;
-        return true;
+        p.x += velocity.getX() / MAGNITUDE;
+        p.y += velocity.getY() / MAGNITUDE;
     }
     
     public Vector2D velocity() {
