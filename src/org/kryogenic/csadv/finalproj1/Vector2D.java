@@ -23,7 +23,7 @@ public class Vector2D {
     /**
      * The dot product of two vectors
      * @param v the second Vector2D
-     * @return a new Vector2D representing the dot product of this Vector2D and v
+     * @return a float representing the dot product of this Vector2D and v
      */
     public float dotProduct(Vector2D v) {
     	return x * v.x + y * v.y;
